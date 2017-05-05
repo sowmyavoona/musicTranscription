@@ -5,10 +5,13 @@ import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -20,34 +23,95 @@ import android.widget.Toast;
 import java.io.File;
 
 public class MainActivity extends AppCompatActivity{
-    private Button uploadButton, transcribeButton;
+    private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
+
+    private Button uploadButton, transcribeButton, recordButton, playButton;
     private TextView pathField;
+
     private static final int PICK_FILE_REQUEST = 1;
     private String audioPath;
     private  ServerHandler serverHandler;
-    ProgressDialog progress;
+    private SoundRecorder soundRecorder;
+    private FileManager fileManager;
+    private ProgressDialog progress;
 
+    String directoryPath, contactPath, mRecordFilePath, musicSheetPath;
+    boolean mStartRecording = true;
+    boolean mStartPlaying = true;
+
+    private boolean permissionToRecordAccepted = false;
+    private String [] permissions = {Manifest.permission.RECORD_AUDIO};
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode){
+            case REQUEST_RECORD_AUDIO_PERMISSION:
+                permissionToRecordAccepted  = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                break;
+        }
+        if (!permissionToRecordAccepted ) finish();
+
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        directoryPath = Environment.getExternalStorageDirectory()+File.separator+"musicTranscription/";
+
+        soundRecorder = new SoundRecorder(directoryPath);
         serverHandler = new ServerHandler();
+        fileManager = new FileManager();
+
         uploadButton = (Button) findViewById(R.id.uploadButton);
         transcribeButton = (Button) findViewById(R.id.transcribeButton);
+        recordButton = (Button) findViewById(R.id.recordButton);
+        playButton = (Button) findViewById(R.id.playButton);
+
         pathField =  (TextView) findViewById(R.id.pathField);
+
+        if(!(fileManager.isExists(directoryPath)))
+              if(!fileManager.create(directoryPath))
+                  finish();
 
         uploadButton.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
-            showFileChooser();
-            if(saveToLocal(audioPath)){
+                showFileChooser();
+                if(saveToLocal(audioPath)){
 
-            } else {}
+                } else {}
             }
         });
         transcribeButton.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
                 transcribeMusic();
+            }
+        });
+
+        recordButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                soundRecorder.onRecord(mStartRecording);
+                if (mStartRecording) {
+                    recordButton.setText("Stop recording");
+                } else {
+                    recordButton.setText("Start recording");
+                }
+                mStartRecording = !mStartRecording;
+            }
+        });
+
+        playButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                soundRecorder.onPlay(mStartPlaying);
+                if (mStartPlaying) {
+                    playButton.setText("Stop playing");
+                } else {
+                    playButton.setText("Start playing");
+                }
+                mStartPlaying = !mStartPlaying;
             }
         });
 
@@ -148,6 +212,5 @@ public class MainActivity extends AppCompatActivity{
             }
         }
     }
-
 
 }

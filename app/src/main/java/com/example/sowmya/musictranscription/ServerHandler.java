@@ -1,6 +1,5 @@
 package com.example.sowmya.musictranscription;
 
-import android.app.Activity;
 import android.util.Log;
 
 import java.io.BufferedInputStream;
@@ -20,7 +19,7 @@ import java.net.URLConnection;
  * Created by sowmya on 5/5/17.
  */
 
-public class ServerHandler extends Activity{
+public class ServerHandler {
 
     String serverUrl = "http://192.168.1.3/musicTranscription/";
     String transcribeUrl = serverUrl + "scripts/transcribe.php";
@@ -42,7 +41,6 @@ public class ServerHandler extends Activity{
             try {
                 connectURL = new URL(uploadUrl);
                 fileInputStream = new FileInputStream(sourceFilePath);
-                //fileInputStream = openFileInput(sourceFilePath);
                 Log.i("connectURL: ",connectURL.toString());
 
             } catch (Exception ex) {
