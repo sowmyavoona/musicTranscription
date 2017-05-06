@@ -9,50 +9,78 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.example.sowmya.musictranscription.MainActivity">
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Upload Audio"
-        android:id="@+id/uploadButton"
-        android:layout_marginTop="99dp"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:id="@+id/input_source"
+        android:weightSum="1"
+        android:gravity="center"
+        android:orientation="horizontal">
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Record Audio"
-        android:id="@+id/recordButton"
-        android:layout_marginTop="99dp"
-        android:layout_alignTop="@+id/uploadButton"
-        android:layout_centerHorizontal="true"
-        />
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Upload Audio"
+            android:layout_weight="0.5"
+            android:id="@+id/uploadButton"
+            />
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Record Audio"
+            android:layout_weight="0.5"
+            android:id="@+id/recordButton"
+            />
+    </LinearLayout>
 
-    <Button
-        android:layout_width="wrap_content"
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Play Audio"
-        android:id="@+id/playButton"
-        android:layout_marginTop="99dp"
-        android:layout_alignTop="@+id/recordButton"
-        android:layout_centerHorizontal="true"
-        />
+        android:orientation="horizontal"
+        android:id="@+id/input_display"
+        android:layout_below="@+id/input_source"
+        android:layout_alignParentLeft="true"
+        android:gravity="center_horizontal"
+        android:visibility="gone"
+        android:layout_alignParentStart="true">
+
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/playButton"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_play_arrow_black_24dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:id="@+id/filename"
+            android:layout_gravity="center"
+            android:text="file name"/>
+    </LinearLayout>
+
 
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/playButton"
         android:id="@+id/pathField"
-        />
+        android:text="path"
+        android:gravity="center"
+        android:layout_below="@+id/input_display"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="32dp"/>
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Transcribe Audio"
         android:id="@+id/transcribeButton"
-        android:layout_marginTop="99dp"
-        android:layout_alignTop="@+id/pathField"
-        android:layout_centerHorizontal="true"
-        />
+        android:enabled="false"
+        android:layout_marginTop="62dp"
+        android:layout_below="@+id/pathField"
+        android:layout_centerHorizontal="true"/>
+
 </RelativeLayout>

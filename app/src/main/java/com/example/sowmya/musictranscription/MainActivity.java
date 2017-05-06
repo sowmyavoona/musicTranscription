@@ -17,6 +17,8 @@ import android.util.Log;
 import android.view.View;
 import android.webkit.MimeTypeMap;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,20 +30,24 @@ public class MainActivity extends AppCompatActivity{
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
     private static final String LOG_TAG = "MainActivity";
 
-    private Button uploadButton, transcribeButton, recordButton, playButton;
+    private Button uploadButton, transcribeButton, recordButton;
+    private ImageButton playButton;
     private TextView pathField;
+
+    private LinearLayout inputSourceLayout;
 
     private static final int PICK_FILE_REQUEST = 1;
 
-    private  ServerHandler serverHandler;
+    private ServerHandler serverHandler;
     private SoundRecorder soundRecorder;
     private FileManager fileManager;
     private ProgressDialog progress;
 
     private String  directoryPath, audioPath, browsedPath, mRecordFilePath, musicSheetPath;
+    private TextView filename;
 
     private boolean mStartRecording = true;
-    private boolean mStartPlaying = true;
+    private boolean isPlaying = false;
 
     private enum ButtonSelected {BROWSE, RECORD};
     ButtonSelected buttonSelected = null;
@@ -52,7 +58,7 @@ public class MainActivity extends AppCompatActivity{
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode){
+        switch (requestCode) {
             case REQUEST_RECORD_AUDIO_PERMISSION:
                 permissionToRecordAccepted  = grantResults[0] == PackageManager.PERMISSION_GRANTED;
                 break;
@@ -67,39 +73,40 @@ public class MainActivity extends AppCompatActivity{
 
         directoryPath = Environment.getExternalStorageDirectory()+File.separator+"musicTranscription/";
 
-        soundRecorder = new SoundRecorder(directoryPath);
+        soundRecorder = new SoundRecorder(directoryPath, this);
         serverHandler = new ServerHandler();
         fileManager = new FileManager();
 
         uploadButton = (Button) findViewById(R.id.uploadButton);
 
         transcribeButton = (Button) findViewById(R.id.transcribeButton);
-        transcribeButton.setEnabled(false);
 
         recordButton = (Button) findViewById(R.id.recordButton);
 
-        playButton = (Button) findViewById(R.id.playButton);
-        playButton.setEnabled(false);
-
+        playButton = (ImageButton) findViewById(R.id.playButton);
+        
         pathField =  (TextView) findViewById(R.id.pathField);
 
-        if(!(fileManager.isExists(directoryPath)))
-              if(!fileManager.create(directoryPath))
+        inputSourceLayout = (LinearLayout) findViewById(R.id.input_display);
+        filename = (TextView) findViewById(R.id.filename);
+
+        if (!(fileManager.isExists(directoryPath)))
+              if (!fileManager.create(directoryPath))
                   finish();
 
-        uploadButton.setOnClickListener(new View.OnClickListener(){
-            public void onClick(View v){
-                if(showFileChooser()){
+        uploadButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (showFileChooser()) {
                     buttonSelected = ButtonSelected.BROWSE;
-                    transcribeButton.setEnabled(true);
-                }else{
+                } else {
                     buttonSelected = null;
                     transcribeButton.setEnabled(false);
                 }
             }
         });
-        transcribeButton.setOnClickListener(new View.OnClickListener(){
-            public void onClick(View v){
+
+        transcribeButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
                 transcribeMusic();
             }
         });
@@ -109,22 +116,24 @@ public class MainActivity extends AppCompatActivity{
             public void onClick(View v) {
                 buttonSelected = ButtonSelected.RECORD;
 
+                SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
+                Date now = new Date();
+                String strDate = sdfDate.format(now) + ".3gp";
+
                 if (mStartRecording) {
                     recordButton.setText("Stop recording");
 
-                    SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
-                    Date now = new Date();
-                    String strDate = sdfDate.format(now);
-                    mRecordFilePath = directoryPath + strDate + ".3gp";
+                    mRecordFilePath = directoryPath + strDate;
 
-                    if(!soundRecorder.startRecording(mRecordFilePath)){
+                    if (!soundRecorder.startRecording(mRecordFilePath)) {
                         mRecordFilePath = "";
                         recordButton.setText("Start recording");
                         buttonSelected = null;
 
-                        Toast.makeText(getApplicationContext(),"something went wrong.please try again",Toast.LENGTH_LONG).show();
+                        Toast.makeText(getApplicationContext(),"Something went wrong.please try " +
+                                "again",Toast.LENGTH_LONG).show();
 
-                    }else{
+                    } else {
                         Toast.makeText(getApplicationContext(),"Recording",Toast.LENGTH_LONG).show();
                     }
 
@@ -132,7 +141,8 @@ public class MainActivity extends AppCompatActivity{
                     recordButton.setText("Start recording");
                     soundRecorder.stopRecording();
                     Toast.makeText(getApplicationContext(),"Recording stopped",Toast.LENGTH_SHORT).show();
-                    playButton.setEnabled(true);
+                    setFileInfo(mRecordFilePath);
+
                 }
                 mStartRecording = !mStartRecording;
             }
@@ -141,18 +151,22 @@ public class MainActivity extends AppCompatActivity{
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mStartPlaying) {
-                    playButton.setText("Stop playing");
-                    if(fileManager.isExists(mRecordFilePath))
-                        soundRecorder.startPlaying(mRecordFilePath);
-                    else{
-                        Toast.makeText(getApplicationContext(),"something went wrong. please try again",Toast.LENGTH_SHORT).show();
+                if (!isPlaying) {
+                    playButton.setImageResource(R.drawable.ic_stop_black_24dp);
+                    Toast.makeText(MainActivity.this, "Stop playing", Toast.LENGTH_SHORT).show();
+                    if (fileManager.isExists(audioPath))
+                        soundRecorder.startPlaying(audioPath);
+                    else {
+                        Toast.makeText(getApplicationContext(), "something went wrong. please try" +
+                                " again", Toast.LENGTH_SHORT).show();
                     }
                 } else {
+                    playButton.setImageResource(R.drawable.ic_play_arrow_black_24dp);
                     soundRecorder.stopPlaying();
-                    playButton.setText("Start playing");
+                    Toast.makeText(MainActivity.this, "Start playing", Toast.LENGTH_SHORT).show();
                 }
-                mStartPlaying = !mStartPlaying;
+                isPlaying = !isPlaying;
+
             }
         });
 
@@ -168,65 +182,81 @@ public class MainActivity extends AppCompatActivity{
             //starts new activity to select file and return data
             startActivityForResult(Intent.createChooser(intent, "Choose File to Upload.."), PICK_FILE_REQUEST);
             return true;
-        }catch (Exception e){
+        }catch (Exception e) {
             Log.e(LOG_TAG, "exception in show file chooser function");
             return false;
         }
     }
 
     @Override
-    protected void onActivityResult(int requestCode,int resultCode,Intent data){
+    protected void onActivityResult(int requestCode,int resultCode,Intent data) {
 
-        if(requestCode == 1){
+        if (requestCode == 1) {
 
-            if(resultCode == RESULT_OK){
+            if (resultCode == RESULT_OK) {
                 //the selected audio.
                 Uri uri = data.getData();
-                //if(getMimeType(getApplicationContext(), uri).equals("wav")){
+                //if (getMimeType(getApplicationContext(), uri).equals("wav")) {
                 String mimeType = getMimeType(getApplicationContext(), uri);
-                if(!mimeType.isEmpty()){
-                    if(mimeType.startsWith("audio")){
+                if (!mimeType.isEmpty()) {
+                    if (mimeType.startsWith("audio")) {
                         browsedPath = getRealPathFromURI(getApplicationContext(),  uri);
+                        setFileInfo(browsedPath);
+
+                    } else {
+                        Toast.makeText(MainActivity.this, "unknown type " + mimeType, Toast
+                                .LENGTH_SHORT).show();
                     }
-                }else{
+                } else {
                     Log.e(LOG_TAG, "mime type empty");
                     Toast.makeText(getApplicationContext()," please select an audio file ",Toast.LENGTH_LONG).show();
                 }
-            }else{
+            } else {
                 Log.e(LOG_TAG, "result code not equals to ok");
-                Toast.makeText(getApplicationContext()," Something went wrong, please try again ",Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(),"No file selected.",Toast.LENGTH_LONG)
+                        .show();
             }
-        }else{
-
+        } else {
+            Toast.makeText(MainActivity.this, "No request was made", Toast.LENGTH_SHORT).show();
         }
 
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    private void transcribeMusic(){
+    private void setFileInfo(String path) {
+
+        String strPath = path.substring(path.lastIndexOf("/")+1, path.length());
+        filename.setText(strPath);
+        inputSourceLayout.setVisibility(View.VISIBLE);
+        transcribeButton.setEnabled(true);
+        audioPath = path;
+    }
+
+    private void transcribeMusic() {
         // Assume thisActivity is the current activity
         //int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
 
         Toast.makeText(getApplicationContext(),audioPath,Toast.LENGTH_LONG).show();
-        if(buttonSelected != null){
-            if(buttonSelected.equals(ButtonSelected.BROWSE))
-                audioPath = browsedPath;
-            else if(buttonSelected.equals(ButtonSelected.RECORD))
-                audioPath = mRecordFilePath;
-        }
+//        audio path has been set dynamically.
+//        if (buttonSelected != null) {
+//            if (buttonSelected.equals(ButtonSelected.BROWSE))
+//                audioPath = browsedPath;
+//            else if (buttonSelected.equals(ButtonSelected.RECORD))
+//                audioPath = mRecordFilePath;
+//        }
         pathField.setText(audioPath);
 
         //transcribeButton.setEnabled(false);
         // connect to php server to send recorded file and get notes
         progress = ProgressDialog.show(MainActivity.this, "Connect to server", "uploading file", true);
 
-        if(serverHandler.uploadFile(audioPath)) {
+        if (serverHandler.uploadFile(audioPath)) {
             serverHandler.downloadFile("http://192.168.1.3/musicTranscription/sheets/test.pdf", directoryPath+"test.pdf");
            // serverHandler.transcribeFile();
             progress.dismiss();
             //get notes
         }
-        else{
+        else {
             progress.dismiss();
             Toast.makeText(getApplicationContext(),"couldn't upload wav file",Toast.LENGTH_SHORT).show();
 
@@ -252,7 +282,7 @@ public class MainActivity extends AppCompatActivity{
         return extension;
     }
 
-    public String getMimeType(Context context, Uri uri){
+    public String getMimeType(Context context, Uri uri) {
         //Check uri format to avoid null
         if (uri.getScheme().equals(ContentResolver.SCHEME_CONTENT)) {
             //If scheme is a content

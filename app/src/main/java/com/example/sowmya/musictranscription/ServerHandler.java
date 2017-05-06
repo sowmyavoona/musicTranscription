@@ -21,7 +21,7 @@ import java.net.URLConnection;
 
 public class ServerHandler {
 
-    String serverUrl = "http://192.168.1.3/musicTranscription/";
+    String serverUrl = "http://192.168.1.4192.168.1.4192.168.1.4/musicTranscription/";
     String transcribeUrl = serverUrl + "scripts/transcribe.php";
     String uploadUrl = serverUrl + "scripts/UploadToServer.php";
 
