@@ -6,8 +6,6 @@ import android.media.MediaRecorder;
 import android.util.Log;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Created by sowmya on 5/5/17.
@@ -24,29 +22,8 @@ public class SoundRecorder {
     public  SoundRecorder(String directoryPath){
         this.directoryPath = directoryPath;
     }
-    void onRecord( boolean start) {
 
-        if (start) {
-            SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
-            Date now = new Date();
-            String strDate = sdfDate.format(now);
-            recordedFilePath = directoryPath + strDate + ".3gp";
-
-            startRecording();
-        } else {
-            stopRecording();
-        }
-    }
-
-    void onPlay(boolean start) {
-        if (start) {
-            startPlaying();
-        } else {
-            stopPlaying();
-        }
-    }
-
-    private void startPlaying() {
+    void startPlaying(String recordedFilePath) {
         mPlayer = new MediaPlayer();
         try {
             mPlayer.setDataSource(recordedFilePath);
@@ -58,12 +35,12 @@ public class SoundRecorder {
         }
     }
 
-    private void stopPlaying() {
+    void stopPlaying() {
         mPlayer.release();
         mPlayer = null;
     }
 
-    private void startRecording() {
+    boolean startRecording(String recordedFilePath) {
         mRecorder = new MediaRecorder();
         try {
             mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -71,14 +48,16 @@ public class SoundRecorder {
             mRecorder.setOutputFile(recordedFilePath);
             mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
             mRecorder.prepare();
+            mRecorder.start();
+            return true;
+
         } catch (IOException e) {
             Log.e(LOG_TAG, "record prepare() failed");
+            return false;
         }
-
-        mRecorder.start();
     }
 
-    private void stopRecording() {
+    void stopRecording() {
         mRecorder.stop();
         mRecorder.reset();
         mRecorder.release();

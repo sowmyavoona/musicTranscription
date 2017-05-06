@@ -70,6 +70,7 @@ public class ServerHandler {
                 conn.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
                 conn.setRequestProperty("uploaded_file",sourceFilePath);
 
+
                 Log.i("sourcePath: ",sourceFilePath);
                 Log.i("setProperty: ","done");
 
@@ -154,6 +155,7 @@ public class ServerHandler {
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setReadTimeout(5000);
                 conn.setConnectTimeout(10000);
+
 
                 if( conn.getResponseCode() == HttpURLConnection.HTTP_OK ){
                     InputStream is = conn.getInputStream();
@@ -313,4 +315,5 @@ public class ServerHandler {
         }
 
     }
+
 }
