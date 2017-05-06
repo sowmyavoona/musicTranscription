@@ -19,10 +19,10 @@ import java.net.URLConnection;
  * Created by sowmya on 5/5/17.
  */
 
-public class ServerHandler {
+public class ServerHandler{
 
 //    String serverUrl = "http://192.168.1.4192.168.1.4192.168.1.4/musicTranscription/";
-    String serverUrl = "http://192.168.1.4/musicTranscription/";
+    String serverUrl = "http://192.168.1.3/musicTranscription/";
 
     String transcribeUrl = serverUrl + "scripts/transcribe.php";
     String uploadUrl = serverUrl + "scripts/UploadToServer.php";
@@ -119,11 +119,12 @@ public class ServerHandler {
                 while ((ch = is.read()) != -1) {
                     b.append((char) ch);
                 }
-                String s = b.toString();
-                Log.i("Response", s);
+                String uploadResponse = b.toString();
+                Log.i("Response", uploadResponse);
                 dos.close();
 
-                isUploaded = true;
+                if(uploadResponse.equals("success"))
+                    isUploaded = true;
 
             } catch (MalformedURLException ex) {
                 Log.e(Tag, "URL error: " + ex.getMessage(), ex);

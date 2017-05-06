@@ -24,35 +24,46 @@ public class SoundRecorder {
     String recordedFilePath = "";
     String directoryPath = "";
 
+    boolean isPlaying = false;
+
+    ImageButton playButton;
+
     public  SoundRecorder(String directoryPath, Context context) {
         this.directoryPath = directoryPath;
         this.context = context;
+        playButton = (ImageButton) ((Activity) context).findViewById(R.id.playButton);
+        mPlayer = new MediaPlayer();
+
     }
 
     void startPlaying(String recordedFilePath) {
-        mPlayer = new MediaPlayer();
 
-        mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mediaPlayer) {
-                updatePlayButton();
+        if(mPlayer.isPlaying() == false){
+            try {
+                mPlayer.setDataSource(recordedFilePath);
+                mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+                mPlayer.prepare();
+                mPlayer.start();
+
+                updatePlayButton(mPlayer.isPlaying());
+
+                mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mediaPlayer) {
+                        updatePlayButton(mPlayer.isPlaying());
+                        mPlayer.reset();
+                    }
+                });
+
+            } catch (IOException e) {
+                Log.e(LOG_TAG, "media player prepare() failed");
             }
-        });
-
-        try {
-            mPlayer.setDataSource(recordedFilePath);
-            mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            mPlayer.prepare();
-            mPlayer.start();
-
-        } catch (IOException e) {
-            Log.e(LOG_TAG, "media player prepare() failed");
+        }else{
+            mPlayer.stop();
+            updatePlayButton(mPlayer.isPlaying());
+            mPlayer.reset();
         }
-    }
 
-    void stopPlaying() {
-        mPlayer.release();
-        mPlayer = null;
     }
 
     boolean startRecording(String recordedFilePath) {
@@ -79,9 +90,13 @@ public class SoundRecorder {
         mRecorder = null;
     }
 
-    public void updatePlayButton(){
-        ImageButton playButton = (ImageButton) ((Activity) context).findViewById(R.id.playButton);
-        playButton.setImageResource(R.drawable.ic_play_arrow_black_24dp);
+    public void updatePlayButton(boolean isPlay){
+        if(isPlay == true)
+            playButton.setImageResource(R.drawable.ic_stop_black_24dp);
+        else
+            playButton.setImageResource(R.drawable.ic_play_arrow_black_24dp);
+
+
     }
 
 }

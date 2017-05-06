@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -12,6 +13,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -41,6 +43,7 @@ public class MainActivity extends AppCompatActivity{
     private ServerHandler serverHandler;
     private SoundRecorder soundRecorder;
     private FileManager fileManager;
+    private DownloadTask downloadTask;
     private ProgressDialog progress;
 
     private String  directoryPath, audioPath, browsedPath, mRecordFilePath, musicSheetPath;
@@ -151,22 +154,12 @@ public class MainActivity extends AppCompatActivity{
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!isPlaying) {
-                    playButton.setImageResource(R.drawable.ic_stop_black_24dp);
-                    Toast.makeText(MainActivity.this, "Stop playing", Toast.LENGTH_SHORT).show();
-                    if (fileManager.isExists(audioPath))
+                if (fileManager.isExists(audioPath))
                         soundRecorder.startPlaying(audioPath);
-                    else {
+                else {
                         Toast.makeText(getApplicationContext(), "something went wrong. please try" +
                                 " again", Toast.LENGTH_SHORT).show();
                     }
-                } else {
-                    playButton.setImageResource(R.drawable.ic_play_arrow_black_24dp);
-                    soundRecorder.stopPlaying();
-                    Toast.makeText(MainActivity.this, "Start playing", Toast.LENGTH_SHORT).show();
-                }
-                isPlaying = !isPlaying;
-
             }
         });
 
@@ -230,6 +223,7 @@ public class MainActivity extends AppCompatActivity{
         inputSourceLayout.setVisibility(View.VISIBLE);
         transcribeButton.setEnabled(true);
         audioPath = path;
+        musicSheetPath = directoryPath + strPath.substring(0, strPath.lastIndexOf("."))+ ".pdf";
     }
 
     private void transcribeMusic() {
@@ -237,28 +231,41 @@ public class MainActivity extends AppCompatActivity{
         //int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
 
         Toast.makeText(getApplicationContext(),audioPath,Toast.LENGTH_LONG).show();
-//        audio path has been set dynamically.
-//        if (buttonSelected != null) {
-//            if (buttonSelected.equals(ButtonSelected.BROWSE))
-//                audioPath = browsedPath;
-//            else if (buttonSelected.equals(ButtonSelected.RECORD))
-//                audioPath = mRecordFilePath;
-//        }
-        pathField.setText(audioPath);
 
-        //transcribeButton.setEnabled(false);
+        pathField.setText(audioPath);
         // connect to php server to send recorded file and get notes
         progress = ProgressDialog.show(MainActivity.this, "Connect to server", "uploading file", true);
-
         if (serverHandler.uploadFile(audioPath)) {
-            serverHandler.downloadFile("http://192.168.1.3/musicTranscription/sheets/test.pdf", directoryPath+"test.pdf");
-           // serverHandler.transcribeFile();
             progress.dismiss();
-            //get notes
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder
+                    .setTitle("Transcription completed")
+                    .setMessage("Download Music Sheet?")
+                    .setCancelable(false)
+                    .setPositiveButton("Yes", new DialogInterface.OnClickListener()
+                    {
+                        public void onClick(DialogInterface dialog, int id)
+                        {   dialog.cancel();
+                            downloadMusicSheet();
+
+                        }
+                    })
+
+                    .setNegativeButton("No", new DialogInterface.OnClickListener()
+                    {
+                        public void onClick(DialogInterface dialog, int id)
+                        {
+                            dialog.cancel();
+                        }
+                    });
+            AlertDialog alert = builder.create();
+            alert.show();
+
         }
         else {
             progress.dismiss();
-            Toast.makeText(getApplicationContext(),"couldn't upload wav file",Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(),"couldn't upload wav file",Toast.LENGTH_LONG).show();
 
         }
 
@@ -308,6 +315,21 @@ public class MainActivity extends AppCompatActivity{
                 cursor.close();
             }
         }
+    }
+
+    private void downloadMusicSheet(){
+        progress = ProgressDialog.show(MainActivity.this, "FILE DOWNLOAD", "downloading file", true);
+        if(serverHandler.downloadFile("http://192.168.1.3/musicTranscription/sheets/test.pdf", musicSheetPath)){
+            progress.dismiss();
+            Toast.makeText(getApplicationContext(),"Download Complete",Toast.LENGTH_LONG).show();
+
+        }else{
+            progress.dismiss();
+            Toast.makeText(getApplicationContext(),"couldn't download file",Toast.LENGTH_LONG).show();
+        }
+       // DownloadTask downloadTask = new DownloadTask(this);
+       // downloadTask.execute("http://192.168.1.3/musicTranscription/sheets/test.pdf", musicSheetPath);
+
     }
 
 }
