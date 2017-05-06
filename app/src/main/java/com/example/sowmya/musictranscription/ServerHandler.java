@@ -21,11 +21,13 @@ import java.net.URLConnection;
 
 public class ServerHandler {
 
-    String serverUrl = "http://192.168.1.4192.168.1.4192.168.1.4/musicTranscription/";
+//    String serverUrl = "http://192.168.1.4192.168.1.4192.168.1.4/musicTranscription/";
+    String serverUrl = "http://192.168.1.4/musicTranscription/";
+
     String transcribeUrl = serverUrl + "scripts/transcribe.php";
     String uploadUrl = serverUrl + "scripts/UploadToServer.php";
 
-    class UploadWavFile implements Runnable{
+    class UploadWavFile implements Runnable {
 
         URL connectURL;
         String sourceFilePath;
@@ -41,7 +43,7 @@ public class ServerHandler {
             try {
                 connectURL = new URL(uploadUrl);
                 fileInputStream = new FileInputStream(sourceFilePath);
-                Log.i("connectURL: ",connectURL.toString());
+                Log.i("connectURL: ", connectURL.toString());
 
             } catch (Exception ex) {
                 ex.printStackTrace();
